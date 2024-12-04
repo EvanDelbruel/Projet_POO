@@ -3,10 +3,9 @@
 #include <vector>
 #include <memory>
 #include <fstream>
-#include <cstdlib>
-#include <ctime>
+#include <filesystem>
 using namespace std;
-
+namespace fs = std::filesystem;
 class Regle{
 protected:
     bool etat;
@@ -77,12 +76,6 @@ private:
 public:
     Grille():dim1(0),dim2(0),grille(dim1,(vector<Cellule>(dim2,Cellule()))){}
     Grille(int dim1,int dim2):dim1(dim1),dim2(dim2),grille(dim1,(vector<Cellule>(dim2,Cellule()))){}
-        /*void setCell(int x, int y, bool etat) {
-        if (x >= 0 && x < dim1 && y >= 0 && y < dim2) {
-            grille[x][y].setEtat(etat);
-        }
-    }*/
-
     void updateGrille() {
         for (int i = 0; i < dim1; i++) {
             for (int j = 0; j < dim2; j++) {
@@ -95,6 +88,17 @@ public:
             }
         }
     }
+    bool estIdentique( vector<vector<Cellule>>& autreGrille) {
+    for (int i = 0; i < dim1; i++) {
+        for (int j = 0; j < dim2; j++) {
+            if (grille[i][j].getEtat() != autreGrille[i][j].getEtat()) {
+                return false; 
+            }
+        }
+    }
+    return true;
+}
+
 
 
     void afficherGrille() {
@@ -111,29 +115,40 @@ public:
         cout << string(20, '=') << endl;
     }
     void Graph(sf::RenderWindow& window) {
-    window.clear(sf::Color::Black); // Efface l'écran avec un fond noir
+    window.clear(sf::Color::Black); 
 
-    sf::RectangleShape cell(sf::Vector2f(20 - 1.0f, 20 - 1.0f)); // Crée un rectangle pour représenter une cellule
+    sf::RectangleShape cell(sf::Vector2f(20 - 1.0f, 20 - 1.0f)); 
 
     for (int i = 0; i < dim1; i++) {
         for (int j = 0; j < dim2; j++) {
             if (grille[i][j].getEtat() == true) {
-                cell.setFillColor(sf::Color::White); // Cellule vivante (blanche)
+                cell.setFillColor(sf::Color::White); 
             } else {
-                cell.setFillColor(sf::Color::Black); // Cellule morte (noire)
+                cell.setFillColor(sf::Color::Black);
             }
-            cell.setPosition(j * 20, i * 20); // Positionne la cellule sur la grille
-            window.draw(cell); // Dessine la cellule dans la fenêtre
+            cell.setPosition(j * 20, i * 20);
+            window.draw(cell);
         }
     }
 
-    window.display(); // Affiche le contenu de la fenêtre
+    window.display(); 
 }
-
-        
     
-    
-    
+   void ecrireDansFichier(const string& filename, int iteration) {
+        ofstream file(filename);
+        if (!file.is_open()) {
+            cerr << "Impossible d'ouvrir le fichier de sortie !" << endl;
+            exit(1);
+        }
+        file << "Iteration: " << iteration << "\n";
+        for (int i = 0; i < dim1; ++i) {
+            for (int j = 0; j < dim2; ++j) {
+                file << (grille[i][j].getEtat() ? "1" : "0") << " ";
+            }
+            file << "\n";
+        }
+        file.close();
+    } 
     void ficher(const std::string& filename) {
         std::ifstream file(filename);
         if (!file.is_open()) {
@@ -153,24 +168,43 @@ public:
         }
         file.close();
     }
-    void run(const string& nomF,int iteration,int temps){
+    void run(const string& nomF, int iterations) {
         ficher(nomF);
-        sf::RenderWindow window(sf::VideoMode(dim1 * 20, dim2 * 20), "Jeu de la Vie");
-        for (int i = 0; i < iteration && window.isOpen(); ++i) {
+        string outputDir = nomF + "_out";
+        fs::create_directory(outputDir);
+
+        sf::RenderWindow window(sf::VideoMode(dim2 * 20, dim1 * 20), "Jeu de la Vie");
+        int currentIteration = 0;
+        vector<vector<Cellule>> grillePrecedente = grille; 
+
+        while (currentIteration < iterations && window.isOpen()) {
             sf::Event event;
+            bool spacePressed = false;
             while (window.pollEvent(event)) {
                 if (event.type == sf::Event::Closed) {
                     window.close();
+                } else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
+                    spacePressed = true;
                 }
             }
-            afficherGrille();
-            Graph(window);
-            updateGrille();
-            sf::sleep(sf::milliseconds(temps));
-        }
-        }
 
+            if (spacePressed) {
+                string iterationFilename = outputDir + "/iteration_" + to_string(currentIteration) + ".txt";
+                ecrireDansFichier(iterationFilename, currentIteration);
+                Graph(window);
+                updateGrille();
+                if (estIdentique(grillePrecedente)) {
+                    ecrireDansFichier(iterationFilename, currentIteration);
+                    cout << "La simulation s'arrête : plus d'évolution détectée." << endl;
+                    break;
+                }
+                grillePrecedente = grille;
+                ++currentIteration;
+            }
+        }
+    }
 };
+
 
 
 int main() {
@@ -178,13 +212,10 @@ int main() {
     cout << "Entrez le chemin du fichier d'entrée : ";
     cin >> filename;
     int iteration;
-    cout << "Entrez le nombre d'iteration ";
+    cout << "Entrez le nombre d'iteration :";
     cin >> iteration;
-    int temps;
-    cout << "Entrez le temps entre les iterations ";
-    cin >> temps;
     Grille g;
-    g.run(filename,iteration,temps);
+    g.run(filename,iteration);
 
     return 0;
 }
