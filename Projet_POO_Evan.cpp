@@ -58,7 +58,7 @@ public:
 // Définit une interface pour appliquer des règles au jeu
 class Regle {
 public:
-    virtual bool application(bool etat, int voisin) const = 0; // Méthode virtuelle pure
+    virtual bool application(bool etat, int nombreDeVoisins) const = 0; // Méthode virtuelle pure
 };
 
 // **Classe RegleSt**
@@ -68,9 +68,9 @@ public:
     // Applique les règles standard :
     // - Une cellule vivante reste vivante avec 2 ou 3 voisins vivants.
     // - Une cellule morte devient vivante avec exactement 3 voisins vivants.
-    bool application(bool etat, int voisin) const override {
-        if (etat && (voisin == 2 || voisin == 3)) return true; // Cellule vivante survit
-        if (!etat && voisin == 3) return true; // Cellule morte devient vivante
+    bool application(bool etat, int nombreDeVoisins) const override {
+        if (etat && (nombreDeVoisins == 2 || nombreDeVoisins == 3)) return true; // Cellule vivante survit
+        if (!etat && nombreDeVoisins == 3) return true; // Cellule morte devient vivante
         return false; // Sinon, la cellule reste morte ou meurt
     }
 };
@@ -79,22 +79,22 @@ public:
 // Représente la grille et gère la logique principale du jeu de la vie
 class Grille : public RegleSt {
 private:
-    int dim1, dim2;                   // Dimensions de la grille (lignes, colonnes)
+    int nbLignes, nbColonnes;                   // Dimensions de la grille (lignes, colonnes)
     vector<vector<bool>> grille;      // Matrice contenant l'état des cellules (true = vivante, false = morte)
-    set<Position> cellulesVivantes;  // Ensemble des cellules actuellement vivantes
+    set<Position> cellulesVivantes;  // (Conteneur) stock les positions(x,y) des cellules actuellement vivantes
     set<string> configurations;      // Historique des configurations uniques pour détecter les répétitions
 
     // **Méthode pour notifier les voisins d'une cellule vivante**
-    void notifierVoisines(const Position& pos, map<Position, int>& voisins) {
+    void notifierVoisines(const Position& pos, map<Position, int>& nombreDeVoisins) {
         for (int dx = -1; dx <= 1; ++dx) {       // Parcourt les 8 voisins potentiels (y compris diagonales)
             for (int dy = -1; dy <= 1; ++dy) {
                 if (dx == 0 && dy == 0) continue; // Ignore la cellule elle-même
 
                 // Calcul des coordonnées voisines avec gestion de la grille torique
-                int nx = (pos.getX() + dx + dim1) % dim1; // Gestion des bords pour la coordonnée x
-                int ny = (pos.getY() + dy + dim2) % dim2; // Gestion des bords pour la coordonnée y
+                int nx = (pos.getX() + dx + nbLignes) % nbLignes; // Gestion des bords pour la coordonnée x
+                int ny = (pos.getY() + dy + nbColonnes) % nbColonnes; // Gestion des bords pour la coordonnée y
 
-                voisins[Position(nx, ny)]++; // Incrémente le nombre de voisins pour cette position
+                nombreDeVoisins[Position(nx, ny)]++; // Incrémente le nombre de voisins pour cette position
             }
         }
     }
@@ -113,7 +113,7 @@ private:
 
 public:
     // **Constructeur**
-    Grille(int dim1, int dim2) : dim1(dim1), dim2(dim2), grille(dim1, vector<bool>(dim2, false)) {}
+    Grille(int nbLignes, int nbColonnes) : nbLignes(nbLignes), nbColonnes(nbColonnes), grille(nbLignes, vector<bool>(nbColonnes, false)) {}
 
     // **Charge une grille initiale depuis un fichier**
     void ficher(const string& filename) {
@@ -123,11 +123,11 @@ public:
             exit(1); // Termine le programme si le fichier ne peut pas être ouvert
         }
 
-        file >> dim1 >> dim2; // Lit les dimensions de la grille depuis le fichier
-        grille.resize(dim1, vector<bool>(dim2, false)); // Redimensionne la grille
+        file >> nbLignes >> nbColonnes; // Lit les dimensions de la grille depuis le fichier
+        grille.resize(nbLignes, vector<bool>(nbColonnes, false)); // Redimensionne la grille
 
-        for (int i = 0; i < dim1; ++i) {
-            for (int j = 0; j < dim2; ++j) {
+        for (int i = 0; i < nbLignes; ++i) {
+            for (int j = 0; j < nbColonnes; ++j) {
                 int state;
                 file >> state; // Lit l'état de chaque cellule (0 ou 1)
                 grille[i][j] = (state == 1); // Affecte l'état à la cellule
@@ -141,25 +141,26 @@ public:
 
     // **Met à jour la grille pour passer à l'itération suivante**
     bool updateGrille() {
-        map<Position, int> voisins; // Compte les voisins de chaque cellule
+        map<Position, int> nombreDeVoisins; // Compte le nombre de voisins de chaque cellule
 
-        // Parcourt les cellules vivantes pour notifier leurs voisines
+        // Parcourt les cellules vivantes pour notifier le nombre de voisines à leurs voisines
         for (const auto& pos : cellulesVivantes) {
-            notifierVoisines(pos, voisins);
+            notifierVoisines(pos, nombreDeVoisins);
         }
 
         set<Position> nouvellesCellulesVivantes; // Ensemble des nouvelles cellules vivantes
 
         // Applique les règles du jeu aux cellules ayant des voisins
-        for (const auto& [pos, count] : voisins) {
-            bool estVivante = grille[pos.getX()][pos.getY()];
+        for (const auto& [pos, count] : nombreDeVoisins) {    // découpe nombreDeVoisins pour prendre d'un coté la position (x,y) de la cellule et de l'autre coté le nombre de voisin qu'elle possède (count)
+            bool estVivante = grille[pos.getX()][pos.getY()]; 
             if (application(estVivante, count)) {
                 nouvellesCellulesVivantes.insert(pos); // Ajoute les cellules qui deviennent vivantes
-            }
+            } 
         }
+        
 
         // Met à jour la grille avec les nouvelles cellules vivantes
-        grille.assign(dim1, vector<bool>(dim2, false)); // Réinitialise la grille
+        grille.assign(nbLignes, vector<bool>(nbColonnes, false)); // Réinitialise la grille
         for (const auto& pos : nouvellesCellulesVivantes) {
             grille[pos.getX()][pos.getY()] = true; // Active les cellules vivantes
         }
@@ -182,11 +183,11 @@ public:
         // Écrit les informations dans le fichier
         file << "Iteration: " << iteration << "\n";
         file << "Cellules vivantes: " << cellulesVivantes.size() << "\n";
-        file << "Dimensions: " << dim1 << "x" << dim2 << "\n";
+        file << "Dimensions: " << nbLignes << "x" << nbColonnes << "\n";
 
         // Écrit l'état de la grille ligne par ligne
-        for (int i = 0; i < dim1; ++i) {
-            for (int j = 0; j < dim2; ++j) {
+        for (int i = 0; i < nbLignes; ++i) {
+            for (int j = 0; j < nbColonnes; ++j) {
                 file << (grille[i][j] ? "1 " : "0 "); // Écrit '1' pour vivante, '0' pour morte
             }
             file << "\n";
@@ -202,11 +203,11 @@ public:
         // Écrit les informations de stabilisation
         file << "Stabilisation à l'iteration: " << iteration << "\n";
         file << "Cellules vivantes: " << cellulesVivantes.size() << "\n";
-        file << "Dimensions: " << dim1 << "x" << dim2 << "\n";
+        file << "Dimensions: " << nbLignes << "x" << nbColonnes << "\n";
 
         // Écrit l'état de la grille ligne par ligne
-        for (int i = 0; i < dim1; ++i) {
-            for (int j = 0; j < dim2; ++j) {
+        for (int i = 0; i < nbLignes; ++i) {
+            for (int j = 0; j < nbColonnes; ++j) {
                 file << (grille[i][j] ? "1 " : "0 ");
             }
             file << "\n";
@@ -219,8 +220,8 @@ public:
         text.setString("Iteration : " + to_string(iteration)); // Met à jour le texte avec le numéro d'itération
 
         // Dessine les cellules vivantes
-        for (int i = 0; i < dim1; ++i) {
-            for (int j = 0; j < dim2; ++j) {
+        for (int i = 0; i < nbLignes; ++i) {
+            for (int j = 0; j < nbColonnes; ++j) {
                 if (grille[i][j]) {
                     sf::RectangleShape cell(sf::Vector2f(pixelSize - 1, pixelSize - 1)); // Crée une cellule de taille spécifiée
                     cell.setPosition(j * pixelSize, i * pixelSize); // Positionne la cellule sur la grille
@@ -235,8 +236,8 @@ public:
     }
 
     // **Accesseurs pour les dimensions**
-    int getDim1() const { return dim1; } // Retourne le nombre de lignes
-    int getDim2() const { return dim2; } // Retourne le nombre de colonnes
+    int getNbLignes() const { return nbLignes; } // Retourne le nombre de lignes
+    int getNbColonnes() const { return nbColonnes; } // Retourne le nombre de colonnes
 };
 
 // **Classe Simulation**
@@ -272,13 +273,13 @@ public:
             simulationNumber++; // Incrémente le numéro si le dossier existe déjà
         }
 
-        return folderName; // Retourne le chemin du dossier
+        return folderName; // Retourne le NOM du dossier
     }
 
     // **Exécute la simulation**
     void run() {
         // Crée une fenêtre graphique avec des dimensions adaptées à la grille
-        sf::RenderWindow window(sf::VideoMode(grille.getDim2() * pixelSize, grille.getDim1() * pixelSize + 50), "Jeu de la Vie");
+        sf::RenderWindow window(sf::VideoMode(grille.getNbColonnes() * pixelSize, grille.getNbLignes() * pixelSize + 50), "Jeu de la Vie");
 
         // Charge une police pour afficher le texte
         sf::Font font;
@@ -292,7 +293,7 @@ public:
         text.setFont(font); // Applique la police
         text.setCharacterSize(20); // Définit la taille du texte
         text.setFillColor(sf::Color::White); // Définit la couleur du texte (blanc)
-        text.setPosition(10, grille.getDim1() * pixelSize); // Positionne le texte sous la grille
+        text.setPosition(10, grille.getNbLignes() * pixelSize); // Positionne le texte sous la grille
 
         int currentIteration = 1; // Initialise le compteur d'itérations
         bool spacePressed = false; // Indique si la barre espace est appuyée
@@ -329,12 +330,12 @@ public:
 
 // **Main**
 int main() {
-    string filename; // Chemin du fichier d'entrée
+    string filename; // NOM du fichier d'entrée
     int iterations; // Nombre d'itérations souhaitées
     int pixelSize; // Taille des pixels pour l'affichage graphique
 
     // Demande les paramètres à l'utilisateur
-    cout << "Entrez le chemin du fichier d'entree : ";
+    cout << "Entrez le NOM du fichier d'entree : ";
     cin >> filename;
     cout << "Entrez le nombre d'iterations : ";
     cin >> iterations;
