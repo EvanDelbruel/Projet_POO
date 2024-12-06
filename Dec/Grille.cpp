@@ -78,7 +78,7 @@ bool Grille::updateGrille() {
         // Applique les règles du jeu aux cellules ayant des voisins
         for (const auto& [pos, count] : nombreDeVoisins) {    // découpe nombreDeVoisins pour prendre d'un coté la position (x,y) de la cellule et de l'autre coté le nombre de voisin qu'elle possède (count)
             bool estVivante = grille[pos.getX()][pos.getY()]; 
-            if (application(estVivante, count)) {
+            if (regle.application(estVivante, count)) {
                 nouvellesCellulesVivantes.insert(pos); // Ajoute les cellules qui deviennent vivantes
             } 
         }

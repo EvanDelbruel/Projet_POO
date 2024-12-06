@@ -10,12 +10,13 @@
 #include <SFML/Graphics.hpp> 
 
 
-class Grille : public RegleSt {
+class Grille {
 private:
     int nbLignes, nbColonnes;
     std::vector<std::vector<bool>> grille;
     std::set<Position> cellulesVivantes;
     std::set<std::string> configurations;
+    RegleSt regle;
 
 public:
     Grille(int nbLignes, int nbColonnes);
@@ -31,4 +32,4 @@ public:
 };
 
 #endif // GRILLE_H
-
+                            
