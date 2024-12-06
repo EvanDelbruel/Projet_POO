@@ -19,8 +19,8 @@ Grille::Grille(int nbLignes, int nbColonnes)
 std::string Grille::getConfigurationString() const{
         stringstream ss;
         for (const auto& row : grille) {
-            for (bool cell : row) {
-                ss << (cell ? "1" : "0"); // Ajoute '1' si la cellule est vivante, '0' sinon
+            for (bool ligne : row) {
+                ss << (ligne ? "1" : "0"); // Ajoute '1' si la cellule est vivante, '0' sinon
             }
         }
         return ss.str(); // Retourne la chaîne correspondant à l'état actuel
