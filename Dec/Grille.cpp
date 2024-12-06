@@ -33,13 +33,11 @@ void Grille::ficher(const std::string& filename) {
             cout << "Erreur : Impossible d'ouvrir le fichier !" << endl;
             exit(1); // Termine le programme si le fichier ne peut pas être ouvert
         }
-       
-    /*if (!(file >> nbLignes >> nbColonnes) || nbLignes <= 0 || nbColonnes <= 0) {
-         cout<<"Fichier de configuration invalide."<<endl;
-         exit(1);}*/
-
 
         file >> nbLignes >> nbColonnes; // Lit les dimensions de la grille depuis le fichier
+        if (nbLignes <= 0 || nbColonnes <= 0) {
+         cout<<"Fichier de configuration invalide."<<endl;
+         exit(1);}
         grille.resize(nbLignes, vector<bool>(nbColonnes, false)); // Redimensionne la grille
 
         for (int i = 0; i < nbLignes; ++i) {
