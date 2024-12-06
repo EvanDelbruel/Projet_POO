@@ -43,7 +43,7 @@ std::string Simulation::createSimulationFolder(const std::string& filename) {
 // Méthode pour exécuter la simulation
 void Simulation::run() {
         // Crée une fenêtre graphique avec des dimensions adaptées à la grille
-        sf::RenderWindow window(sf::VideoMode(grille.getNbColonnes() * pixelSize, grille.getNbLignes() * pixelSize + 50), "Jeu de la Vie");
+        sf::RenderWindow window(sf::VideoMode(grille.getNbColonnes() * pixelSize + 50, grille.getNbLignes() * pixelSize + 50), "Jeu de la Vie");
 
         // Charge une police pour afficher le texte
         sf::Font font;

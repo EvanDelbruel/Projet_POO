@@ -141,24 +141,26 @@ void Grille::saveStabilisation(int iteration, const std::string& folderPath) {
 
 // Affichage graphique
 void Grille::afficherGraphique(sf::RenderWindow& window, sf::Text& text, int pixelSize, int iteration) {
-        window.clear(); // Efface la fenêtre graphique
-        text.setString("Iteration : " + to_string(iteration)); // Met à jour le texte avec le numéro d'itération
+        window.clear(sf::Color::Black); 
+        text.setString("Iteration : " + to_string(iteration)); 
+        sf::RectangleShape cell(sf::Vector2f(pixelSize - 1.0f, pixelSize - 1.0f)); 
 
         // Dessine les cellules vivantes
         for (int i = 0; i < nbLignes; ++i) {
             for (int j = 0; j < nbColonnes; ++j) {
                 if (grille[i][j]) {
-                    sf::RectangleShape cell(sf::Vector2f(pixelSize - 1, pixelSize - 1)); // Crée une cellule de taille spécifiée
-                    cell.setPosition(j * pixelSize, i * pixelSize); // Positionne la cellule sur la grille
-                    cell.setFillColor(sf::Color::White); // Définit la couleur de la cellule (blanc pour vivante)
+                    cell.setFillColor(sf::Color::White);}
+                else{
+                    cell.setFillColor(sf::Color::Black);}
+                    cell.setPosition(j * pixelSize, i * pixelSize);
                     window.draw(cell); // Ajoute la cellule à la fenêtre
                 }
             }
+            window.draw(text); // Dessine le texte sur la fenêtre
+            window.display(); // Met à jour l'affichage graphique
         }
 
-        window.draw(text); // Dessine le texte sur la fenêtre
-        window.display(); // Met à jour l'affichage graphique
-    }
+        
 
 int Grille::getNbLignes() const { return nbLignes; }
 int Grille::getNbColonnes() const { return nbColonnes; }
