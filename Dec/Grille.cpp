@@ -21,9 +21,13 @@ Grille::Grille(int nbLignes, int nbColonnes)
 void Grille::ficher(const std::string& filename) {
         ifstream file(filename);
         if (!file.is_open()) {
-            cerr << "Erreur : Impossible d'ouvrir le fichier !" << endl;
+            cout << "Erreur : Impossible d'ouvrir le fichier !" << endl;
             exit(1); // Termine le programme si le fichier ne peut pas être ouvert
         }
+        if (!(file >> nbLignes >> nbColonnes) || nbLignes <= 0 || nbColonnes <= 0) {
+         cout<<"Fichier de configuration invalide."<<endl;
+         exit(1);}
+
 
         file >> nbLignes >> nbColonnes; // Lit les dimensions de la grille depuis le fichier
         grille.resize(nbLignes, vector<bool>(nbColonnes, false)); // Redimensionne la grille
