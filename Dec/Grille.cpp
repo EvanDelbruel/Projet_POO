@@ -16,6 +16,15 @@ namespace fs = std::filesystem; // Simplifie l'accès aux fonctionnalités de fi
 Grille::Grille(int nbLignes, int nbColonnes)
     : nbLignes(nbLignes), nbColonnes(nbColonnes),
       grille(nbLignes, std::vector<bool>(nbColonnes, false)) {}
+std::string Grille::getConfigurationString() const{
+        stringstream ss;
+        for (const auto& row : grille) {
+            for (bool cell : row) {
+                ss << (cell ? "1" : "0"); // Ajoute '1' si la cellule est vivante, '0' sinon
+            }
+        }
+        return ss.str(); // Retourne la chaîne correspondant à l'état actuel
+    }
 
 // Méthode pour charger une grille depuis un fichier
 void Grille::ficher(const std::string& filename) {
@@ -59,15 +68,7 @@ void Grille::notifierVoisines(const Position& pos, std::map<Position, int>& nomb
             }
         }
     }
-std::string Grille::getConfigurationString() const{
-        stringstream ss;
-        for (const auto& row : grille) {
-            for (bool cell : row) {
-                ss << (cell ? "1" : "0"); // Ajoute '1' si la cellule est vivante, '0' sinon
-            }
-        }
-        return ss.str(); // Retourne la chaîne correspondant à l'état actuel
-    }
+
 
 bool Grille::updateGrille() {
         map<Position, int> nombreDeVoisins; // Compte le nombre de voisins de chaque cellule
